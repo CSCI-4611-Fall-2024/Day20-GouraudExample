@@ -63,6 +63,42 @@ out vec2 interpTexCoords;
 
 void main()  {
     // PART 2.0: In class example
-    
-    gl_Position = vec4(0,0,0,1);
+    // Compute the final vertex position and normal
+    vec3 positionWorld = (modelMatrix * vec4(positionModel, 1)).xyz;
+    vec3 normalWorld = normalize((normalMatrix * vec4(normalModel, 0)).xyz);
+
+    vec3 illumination = vec3(0, 0, 0);
+    for (int i=0; i < numLights; i++) {
+
+        // Ambient component
+        illumination += kAmbient * lightAmbientIntensities[i];
+
+        // Compute the vector from the vertex position to the light
+        vec3 l;
+        if (lightTypes[i] == DIRECTIONAL_LIGHT)
+            l = normalize(lightPositionsWorld[i]);
+        else
+            l = normalize(lightPositionsWorld[i] - positionWorld);
+
+        // Diffuse component
+        float diffuseIntensity = max(dot(normalWorld, l), 0.0);
+        illumination += diffuseIntensity * kDiffuse * lightDiffuseIntensities[i];
+
+        // Specular component
+        // Compute the vector from the vertex to the eye
+        vec3 e = normalize(eyePositionWorld - positionWorld);
+        // Compute the light vector reflected about the normal
+        vec3 r = reflect(-l, normalWorld);
+        float specularIntensity = pow(max(dot(e, r), 0.0), shininess);
+        illumination += specularIntensity * kSpecular * lightSpecularIntensities[i];
+
+        // Or, using the halfway vector for the Blinn-Phong reflection model
+        //vec3 h = normalize(l + e);
+        //float specularIntensity = pow(max(dot(h, normalWorld), 0.0), shininess);
+    }
+    interpColor = color;
+    interpColor.rgb *= illumination;
+    interpTexCoords = texCoords.xy; 
+
+    gl_Position = projectionMatrix * viewMatrix * vec4(positionWorld, 1);
 }
