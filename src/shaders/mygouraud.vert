@@ -63,6 +63,24 @@ out vec2 interpTexCoords;
 
 void main()  {
     // PART 2.0: In class example
-    
-    gl_Position = vec4(0,0,0,1);
+    vec4 positionModel4 = vec4(positionModel, 1);
+    vec4 positionWorld = modelMatrix * positionModel4;
+    vec4 positionView = viewMatrix * positionWorld;
+    //gl_Position = projectionMatrix * positionView;
+
+    gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(positionModel, 1);
+
+    vec3 illumination = vec3(0,0,0);
+    for (int i=0; i < numLights; i++) {
+
+      // add in the ambient component
+      illumination += kAmbient * lightAmbientIntensities[i];
+  
+      // add in the diffuse component
+      
+
+      // add in the specular component
+
+    }
+    interpColor = vec4(illumination, 1);    
 }
