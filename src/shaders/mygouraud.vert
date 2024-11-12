@@ -65,10 +65,8 @@ void main()  {
     // PART 2.0: In class example
     vec4 positionModel4 = vec4(positionModel, 1);
     vec4 positionWorld = modelMatrix * positionModel4;
+    vec4 normalWorld = normalMatrix * vec4(normalModel, 0);
     vec4 positionView = viewMatrix * positionWorld;
-    //gl_Position = projectionMatrix * positionView;
-
-    gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(positionModel, 1);
 
     vec3 illumination = vec3(0,0,0);
     for (int i=0; i < numLights; i++) {
@@ -77,10 +75,25 @@ void main()  {
       illumination += kAmbient * lightAmbientIntensities[i];
   
       // add in the diffuse component
-      
+      vec3 lWorld;
+      if (lightTypes[i] == DIRECTIONAL_LIGHT) {
+          lWorld = normalize(lightPositionsWorld[i]);
+      } else {
+          lWorld = normalize(lightPositionsWorld[i] - positionWorld.xyz);
+      }
+      float diffuseIntensity = max(dot(normalWorld.xyz, lWorld), 0.0);
+      illumination += kDiffuse * lightDiffuseIntensities[i] * diffuseIntensity;
+
 
       // add in the specular component
-
+      vec3 eWorld = normalize(eyePositionWorld - positionModel);
+      vec3 rWorld = reflect(-lWorld, normalWorld.xyz);
+      float specularIntensity = pow(max(dot(eWorld, rWorld), 0.0), shininess);
+      illumination += kSpecular * lightSpecularIntensities[i] * specularIntensity;
     }
-    interpColor = vec4(illumination, 1);    
+    interpColor = vec4(illumination, 1); 
+    interpTexCoords = texCoords;
+
+    gl_Position = projectionMatrix * positionView;
+    //gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(positionModel, 1);   
 }
